@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER LOG: บันทึกการตรวจสอบคุณภาพสินค้าระหว่างกระบวนการผลิต (PSP Gravure QC)</title>
+    
+    <!-- Google Fonts: Noto Sans Thai & Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for Dashboard Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS (xlsx) for Excel Export & Import -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans Thai"', '"Sarabun"', 'sans-serif'],
+                    },
+                    colors: {
+                        psp: {
+                            green: '#007A3D',
+                            darkGreen: '#005C2E',
+                            yellow: '#FACC15',
+                            amber: '#EAB308',
+                            orange: '#E08214',
+                            vividOrange: '#F97316',
+                            red: '#D32027',
+                            navy: '#0A226B',
+                            bg: '#F7FAF5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', 'Sarabun', sans-serif;
+            background-color: #F7FAF5;
+            color: #1E293B;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Scrollbar for smooth table horizontal scroll */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EEF5EA;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #A7D7B8;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #007A3D;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border: 1px solid #DCEAD8;
+        }
+        @keyframes gentleWave {
+            0%, 100% { transform: rotate(0deg) translateY(0px); }
+            50% { transform: rotate(2deg) translateY(-3px); }
+        }
+        .mascot-float {
+            animation: gentleWave 3.5s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+        /* Mobile touch optimization */
+        input, select, button {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container (Replaces alert) -->
+    <div id="toast-container" class="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex flex-col gap-2 pointer-events-none px-3 sm:px-0 w-full sm:w-auto max-w-sm"></div>
+
+    <!-- Top Navigation & Brand Header -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-psp-green shadow-xs">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2.5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                
+                <!-- PSP Logo (Exact Vector Match) & System Title -->
+                <div class="flex items-center gap-3">
+                    <!-- Custom PSP SVG Logo matching uploaded image -->
+                    <div class="shrink-0 bg-white rounded-2xl p-1 shadow-xs border border-slate-100">
+                        <svg class="h-10 sm:h-14 w-auto" viewBox="0 0 280 156" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="PSP Logo">
+                            <!-- White Oval Fill & Double Navy Blue Ring (#0A226B) -->
+                            <ellipse cx="140" cy="78" rx="134" ry="72" fill="#FFFFFF" stroke="#0A226B" stroke-width="4.5"/>
+                            <ellipse cx="140" cy="78" rx="125" ry="64" fill="none" stroke="#0A226B" stroke-width="2.5"/>
+                            
+                            <!-- Stylized Green 'P' (#007A3D) -->
+                            <path d="M52 55 C67 39, 108 39, 118 60 C127 79, 112 97, 86 97 L74 97 C71 113, 62 123, 44 123 C40 123, 37 121, 36 119 C49 119, 55 111, 57 93 L60 72 C62 59, 73 51, 86 52 C88 52, 89 53, 88 54 C76 58, 72 67, 70 81 L85 81 C100 81, 107 72, 103 61 C99 50, 74 48, 52 55 Z" fill="#007A3D"/>
+
+                            <!-- Stylized Red 'S' (#D32027) -->
+                            <path d="M174 68 C166 54, 151 48, 141 54 C133 59, 134 69, 145 76 C158 84, 169 94, 165 109 C161 124, 140 129, 121 122 C105 116, 98 104, 100 94 C101 92, 103 92, 104 95 C107 108, 119 116, 134 114 C146 112, 150 103, 143 95 C135 87, 121 80, 118 67 C115 51, 131 39, 150 42 C164 44, 173 54, 176 67 C176 69, 175 69, 174 68 Z" fill="#D32027"/>
+
+                            <!-- Stylized Orange 'P' (#E08214) -->
+                            <path d="M180 55 C195 39, 236 39, 246 60 C255 79, 240 97, 214 97 L202 97 C199 113, 190 123, 172 123 C168 123, 165 121, 164 119 C177 119, 183 111, 185 93 L188 72 C190 59, 201 51, 214 52 C216 52, 217 53, 216 54 C204 58, 200 67, 198 81 L213 81 C228 81, 235 72, 231 61 C227 50, 202 48, 180 55 Z" fill="#E08214"/>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full bg-psp-green text-white">PSP GRAVURE QC</span>
+                            <span class="px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-300">In-Process Quality Log</span>
+                        </div>
+                        <h1 class="text-sm sm:text-lg lg:text-xl font-bold text-slate-800 tracking-tight mt-0.5">
+                            MASTER LOG: บันทึกการตรวจสอบคุณภาพสินค้าระหว่างกระบวนการผลิต
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Right Side: Cute PSP QC Mascot + Action Buttons -->
+                <div class="flex flex-wrap items-center justify-between md:justify-end gap-2.5">
+                    <!-- Mascot Character Decoration with Friendly Speech Bubble -->
+                    <div class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-emerald-50 via-amber-50 to-orange-50 px-3 py-1 rounded-2xl border border-amber-200/80 shadow-2xs">
+                        <div class="relative bg-white px-2.5 py-1 rounded-xl border border-emerald-200 shadow-2xs">
+                            <p class="text-[11px] font-bold text-psp-green leading-tight">พร้อมดักจับ Defect ด่านแรกค่ะ!</p>
+                            <p class="text-[10px] text-psp-orange font-semibold">ตรวจครบ 13 ช่องก่อนปล่อยรัน ✨</p>
+                            <!-- Speech Bubble Tail -->
+                            <span class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-t border-r border-emerald-200 rotate-45"></span>
+                        </div>
+                        <img src="Gemini_Generated_Image_sn7q9gsn7q9gsn7q-Photoroom.png"
+                             onerror="this.style.display='none'"
+                             alt="PSP QC Mascot"
+                             class="h-12 sm:h-14 w-auto object-contain mascot-float select-none drop-shadow-xs">
+                    </div>
+
+                    <!-- Action Buttons: Import / Export Excel & CSV -->
+                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-end">
+                        <label class="cursor-pointer inline-flex items-center gap-1 px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition shadow-2xs">
+                            <i class="ph ph-upload-simple text-sm sm:text-base text-psp-orange"></i>
+                            <span>นำเข้า</span>
+                            <input type="file" id="import-excel-input" accept=".xlsx, .xls, .csv" class="hidden">
+                        </label>
+
+                        <button onclick="exportToExcel()" class="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl bg-psp-green text-white hover:bg-psp-darkGreen transition shadow-xs">
+                            <i class="ph ph-file-xls text-sm sm:text-base text-psp-yellow"></i>
+                            <span>Excel (.xlsx)</span>
+                        </button>
+
+                        <button onclick="exportToCSV()" class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl bg-orange-50 border border-orange-300 text-orange-800 hover:bg-orange-100 transition shadow-2xs">
+                            <i class="ph ph-file-csv text-sm sm:text-base text-psp-orange"></i>
+                            <span>CSV</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 overflow-x-auto">
+                <button onclick="switchTab('log')" id="tab-btn-log" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-psp-green text-white transition shadow-xs flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="ph ph-table text-base text-psp-yellow"></i>
+                    <span>Master Log (13 คอลัมน์)</span>
+                    <span id="badge-total-count" class="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="ph ph-chart-pie text-base text-psp-orange"></i>
+                    <span>Dashboard & Pareto</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+
+        <!-- ========================================================= -->
+        <!-- TAB 1: MASTER LOG FORM & DATA TABLE                       -->
+        <!-- ========================================================= -->
+        <section id="view-log" class="space-y-4 sm:space-y-6">
+
+            <!-- Quick KPI Strip (Green / Yellow / Orange Theme) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+                <div class="glass-card rounded-2xl p-3 sm:p-4 shadow-2xs border-l-4 border-l-psp-green">
+                    <div class="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold">
+                        <span>รายการทั้งหมด</span>
+                        <span class="p-1 rounded-lg bg-emerald-100 text-psp-green"><i class="ph ph-list-checks text-sm sm:text-base"></i></span>
+                    </div>
+                    <div class="mt-1.5 sm:mt-2 flex items-baseline gap-1">
+                        <span id="kpi-count" class="text-xl sm:text-2xl font-bold text-psp-green">0</span>
+                        <span class="text-[11px] text-slate-400">รายการ</span>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-3 sm:p-4 shadow-2xs border-l-4 border-l-psp-orange">
+                    <div class="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold">
+                        <span>ยอดพบปัญหารวม</span>
+                        <span class="p-1 rounded-lg bg-orange-100 text-psp-orange"><i class="ph ph-scales text-sm sm:text-base"></i></span>
+                    </div>
+                    <div class="mt-1.5 sm:mt-2 flex items-baseline gap-1">
+                        <span id="kpi-total-kg" class="text-xl sm:text-2xl font-bold text-psp-orange">0.0</span>
+                        <span class="text-[11px] text-slate-400">kg</span>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-3 sm:p-4 shadow-2xs border-l-4 border-l-amber-400">
+                    <div class="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold">
+                        <span>ยอด Rework</span>
+                        <span class="p-1 rounded-lg bg-amber-100 text-amber-700"><i class="ph ph-arrows-clockwise text-sm sm:text-base"></i></span>
+                    </div>
+                    <div class="mt-1.5 sm:mt-2 flex items-baseline gap-1">
+                        <span id="kpi-rework-kg" class="text-xl sm:text-2xl font-bold text-amber-600">0.0</span>
+                        <span class="text-[11px] text-slate-400">kg</span>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-3 sm:p-4 shadow-2xs border-l-4 border-l-red-500">
+                    <div class="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold">
+                        <span>ยอด Scrap</span>
+                        <span class="p-1 rounded-lg bg-red-100 text-psp-red"><i class="ph ph-trash text-sm sm:text-base"></i></span>
+                    </div>
+                    <div class="mt-1.5 sm:mt-2 flex items-baseline gap-1">
+                        <span id="kpi-scrap-kg" class="text-xl sm:text-2xl font-bold text-psp-red">0.0</span>
+                        <span class="text-[11px] text-slate-400">kg</span>
+                    </div>
+                </div>
+
+                <div class="col-span-2 sm:col-span-3 lg:col-span-1 glass-card rounded-2xl p-3 sm:p-4 shadow-2xs border-l-4 border-l-psp-navy">
+                    <div class="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold">
+                        <span>พิมพ์ vs หลังพิมพ์</span>
+                        <span class="p-1 rounded-lg bg-blue-100 text-psp-navy"><i class="ph ph-factory text-sm sm:text-base"></i></span>
+                    </div>
+                    <div class="mt-1.5 sm:mt-2 flex items-baseline gap-2">
+                        <div><span id="kpi-printing-kg" class="text-xs sm:text-sm font-bold text-psp-orange">0.0</span> <span class="text-[10px] text-slate-400">พิมพ์</span></div>
+                        <span class="text-slate-300">/</span>
+                        <div><span id="kpi-downstream-kg" class="text-xs sm:text-sm font-bold text-psp-navy">0.0</span> <span class="text-[10px] text-slate-400">หลังพิมพ์</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Form Card (13 Columns matching Master Log A-M) -->
+            <div class="bg-white rounded-3xl shadow-sm border border-emerald-200/80 overflow-hidden">
+                <div class="px-4 sm:px-5 py-3.5 sm:py-4 bg-gradient-to-r from-psp-green via-emerald-700 to-amber-500 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-psp-yellow text-slate-900 shadow-xs flex items-center justify-center shrink-0">
+                            <i class="ph ph-note-pencil text-lg sm:text-xl font-bold"></i>
+                        </div>
+                        <div>
+                            <h2 id="form-title" class="text-xs sm:text-base font-bold text-white">บันทึกข้อมูลตรวจสอบคุณภาพใหม่ (New QC Record)</h2>
+                            <p class="text-[10px] sm:text-xs text-amber-100">กรอกข้อมูลให้ครบทั้ง 13 ช่องตามมาตรฐาน Master Log</p>
+                        </div>
+                    </div>
+                    <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-white/20 text-white hover:bg-white/30 transition">
+                        ยกเลิก
+                    </button>
+                </div>
+
+                <form id="qc-form" class="p-4 sm:p-6 space-y-4 sm:space-y-5">
+                    <input type="hidden" id="edit-id" value="">
+
+                    <!-- Row 1: Date, Machine, Job Order, Film Type -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <!-- 1. วันที่ -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                1. วันที่ (Date) <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="date" id="field-date" required
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                        </div>
+
+                        <!-- 2. เครื่องจักร -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                2. เครื่องจักร (Machine) <span class="text-psp-orange">*</span>
+                            </label>
+                            <select id="field-machine" required onchange="toggleCustomMachineInput()"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                                <option value="">-- เลือกเครื่องจักร --</option>
+                                <option value="PR-03">PR-03</option>
+                                <option value="PR-04">PR-04</option>
+                                <option value="PR-06">PR-06</option>
+                                <option value="PR-14">PR-14</option>
+                                <option value="PR-16">PR-16</option>
+                                <option value="PR-18">PR-18</option>
+                                <option value="PR-19">PR-19</option>
+                                <option value="เครื่องผ่า">เครื่องผ่า</option>
+                                <option value="เครื่องลามิเนต">เครื่องลามิเนต</option>
+                                <option value="เครื่องซีล">เครื่องซีล</option>
+                                <option value="เครื่องกรอ">เครื่องกรอ</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                            <input type="text" id="field-machine-other" placeholder="ระบุชื่อเครื่องจักรเพิ่มเติม (ถ้ามี)..."
+                                class="hidden mt-2 w-full px-3.5 py-2 text-xs rounded-xl border border-amber-300 bg-amber-50/40 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-orange outline-none transition">
+                        </div>
+
+                        <!-- 3. Job Order -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                3. Job Order <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="text" id="field-job" required placeholder="เช่น JO-2611-001"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition uppercase">
+                        </div>
+
+                        <!-- 4. ชนิดฟิล์ม -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                4. ชนิดฟิล์ม (Film Type) <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="text" id="field-film-type" list="film-type-suggestions" required placeholder="เลือกหรือพิมพ์ เช่น PET 12µm"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                            <datalist id="film-type-suggestions">
+                                <option value="PET 12µm">
+                                <option value="BOPP 20µm">
+                                <option value="BOPP Matte 20µm">
+                                <option value="NY 15µm">
+                                <option value="PE 45µm">
+                                <option value="CPP 30µm">
+                                <option value="LLDPE 50µm">
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Film Lot, Print Lot, Phase, Defect Category -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <!-- 5. lot ฟิล์ม -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                5. lot ฟิล์ม (Film Lot) <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="text" id="field-film-lot" required placeholder="เช่น FL-2611-A01"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                        </div>
+
+                        <!-- 6. lot พิมพ์ -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                6. lot พิมพ์ (Print Lot) <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="text" id="field-print-lot" required placeholder="เช่น PL-P1-089"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                        </div>
+
+                        <!-- 7. ช่วงที่พบปัญหา -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                7. ช่วงที่พบปัญหา (Phase) <span class="text-psp-orange">*</span>
+                            </label>
+                            <select id="field-phase" required onchange="toggleCustomPhaseInput()"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                                <option value="">-- เลือกช่วงที่พบปัญหา --</option>
+                                <option value="ระหว่างพิมพ์">ระหว่างพิมพ์</option>
+                                <option value="หลังพิมพ์">หลังพิมพ์</option>
+                                <option value="ผ่า">ผ่า</option>
+                                <option value="ตรวจม้วน">ตรวจม้วน</option>
+                                <option value="ซีล">ซีล</option>
+                                <option value="กรอ">กรอ</option>
+                                <option value="ตัด">ตัด</option>
+                                <option value="คัดเลือก">คัดเลือก</option>
+                                <option value="QC สุ่ม">QC สุ่ม</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                            <input type="text" id="field-phase-other" placeholder="ระบุช่วงที่พบปัญหาเพิ่มเติม (ถ้ามี)..."
+                                class="hidden mt-2 w-full px-3.5 py-2 text-xs rounded-xl border border-amber-300 bg-amber-50/40 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-orange outline-none transition">
+                        </div>
+
+                        <!-- 8. กลุ่มปัญหา -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                8. กลุ่มปัญหา (Defect Category) <span class="text-psp-orange">*</span>
+                            </label>
+                            <select id="field-category" required onchange="toggleCustomCategoryInput()"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                                <option value="">-- เลือกกลุ่มปัญหา --</option>
+                                <option value="Printing">Printing</option>
+                                <option value="Appearance">Appearance</option>
+                                <option value="Functionality">Functionality</option>
+                                <option value="Out_of_Spec">Out_of_Spec</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                            <input type="text" id="field-category-other" placeholder="ระบุกลุ่มปัญหาเพิ่มเติม (ถ้ามี)..."
+                                class="hidden mt-2 w-full px-3.5 py-2 text-xs rounded-xl border border-amber-300 bg-amber-50/40 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-orange outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Observed Defect (NEW), Additional Details -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+                        <!-- 9. ปัญหาที่พบ (Linked dynamically with 8. กลุ่มปัญหา) -->
+                        <div class="lg:col-span-5">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                9. ปัญหาที่พบ (Defect Found) <span class="text-psp-orange">*</span>
+                            </label>
+                            <select id="field-defect-found" required
+                                class="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                                <option value="">-- กรุณาเลือกกลุ่มปัญหาข้อ 8 ก่อน --</option>
+                            </select>
+                            <input type="text" id="field-defect-other"
+                                placeholder="ระบุปัญหาอื่นเพิ่มเติม..."
+                                class="hidden mt-2 w-full px-3.5 py-2 text-xs rounded-xl border border-amber-300 bg-amber-50/40 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-orange outline-none transition">
+                        </div>
+
+                        <!-- 10. รายละเอียดปัญหาเพิ่มเติม -->
+                        <div class="lg:col-span-7">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                10. รายละเอียดปัญหาเพิ่มเติม
+                            </label>
+                            <input type="text" id="field-details" placeholder="ระบุตำแหน่งสี ระยะความยาว หรือสาเหตุเบื้องต้นเพิ่มเติม..."
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Defect Quantity (kg), Photo Upload, Disposition -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+                        <!-- 11. ยอดที่พบปัญหา (kg) -->
+                        <div class="lg:col-span-3">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                11. ยอดพบปัญหา (kg) <span class="text-psp-orange">*</span>
+                            </label>
+                            <input type="number" id="field-qty" step="0.01" min="0" required placeholder="0.00"
+                                class="w-full px-3.5 py-2.5 text-sm font-bold text-psp-orange rounded-xl border border-slate-300 bg-orange-50/30 focus:bg-white focus:ring-2 focus:ring-orange-200 focus:border-psp-orange outline-none transition">
+                        </div>
+
+                        <!-- 12. รูปภาพปัญหา -->
+                        <div class="lg:col-span-4">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                12. รูปภาพปัญหา (อัปโหลด / ถ่ายรูป)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <label class="flex-1 cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl border border-dashed border-psp-orange bg-amber-50/60 hover:bg-amber-100/70 text-amber-900 transition">
+                                    <i class="ph ph-camera text-base text-psp-orange"></i>
+                                    <span id="photo-label-text">แนบรูป / ถ่ายภาพ</span>
+                                    <input type="file" id="field-photo" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoUpload(event)">
+                                </label>
+                                <div id="photo-preview-box" class="hidden relative w-10 h-10 rounded-xl overflow-hidden border border-amber-300 shrink-0 group">
+                                    <img id="photo-preview-img" src="" alt="Preview" class="w-full h-full object-cover">
+                                    <button type="button" onclick="clearPhoto()" title="ลบรูป" class="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs transition">
+                                        <i class="ph ph-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 13. วิธีการจัดการกับม้วนที่พบปัญหา -->
+                        <div class="lg:col-span-5">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                13. วิธีการจัดการกับม้วนที่พบปัญหา <span class="text-psp-orange">*</span>
+                            </label>
+                            <select id="field-disposition" required
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none transition">
+                                <option value="">-- เลือกวิธีการจัดการ --</option>
+                                <option value="รับเฉพาะ lot">รับเฉพาะ lot</option>
+                                <option value="นำไป Rework">นำไป Rework</option>
+                                <option value="ลงของเสียในระบบ">ลงของเสียในระบบ</option>
+                                <option value="ส่งม้วนให้ QC">ส่งม้วนให้ QC</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit Row -->
+                    <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <p class="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1 text-center sm:text-left">
+                            <i class="ph ph-cloud-check text-psp-green text-base shrink-0"></i>
+                            <span>บันทึกอัตโนมัติในเบราว์เซอร์ พร้อม Export กลับเป็น Excel ได้ทันที</span>
+                        </p>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                            <button type="button" onclick="resetForm()" class="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">
+                                ล้างฟอร์ม
+                            </button>
+                            <button type="submit" id="submit-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-gradient-to-r from-psp-green to-emerald-600 text-white hover:from-psp-darkGreen hover:to-emerald-700 shadow-sm transition">
+                                <i class="ph ph-check-circle text-base sm:text-lg text-psp-yellow"></i>
+                                <span id="submit-btn-text">บันทึกข้อมูล</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filter & Search Bar + Master Log Data Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-emerald-200/80 overflow-hidden">
+                <!-- Filter Controls -->
+                <div class="p-3.5 sm:p-5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/70 via-amber-50/50 to-orange-50/50 space-y-2.5 sm:space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="ph ph-table text-base sm:text-lg text-psp-green"></i>
+                            <span>รายการบันทึกคุณภาพระหว่างผลิต (Master Log Records)</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <button onclick="resetFilters()" class="text-[11px] sm:text-xs text-psp-green hover:text-psp-darkGreen font-semibold px-2.5 py-1 rounded-lg hover:bg-emerald-100/60 transition">
+                                ล้างตัวกรอง
+                            </button>
+                            <button onclick="confirmClearAllData()" class="text-[11px] sm:text-xs text-psp-orange hover:text-orange-800 font-semibold px-2.5 py-1 rounded-lg hover:bg-orange-100/60 transition">
+                                รีเซ็ตตัวอย่าง
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                        <!-- Search Keyword -->
+                        <div class="lg:col-span-2 relative">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="filter-search" oninput="renderTable()" placeholder="ค้นหา Job Order, Lot, ปัญหา..."
+                                class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none">
+                        </div>
+
+                        <!-- Filter Date -->
+                        <div>
+                            <input type="date" id="filter-date" onchange="renderTable()" title="กรองตามวันที่"
+                                class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-amber-300 focus:border-psp-green outline-none">
+                        </div>
+
+                        <!-- Filter Machine -->
+                        <div>
+                            <select id="filter-machine" onchange="renderTable()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white outline-none">
+                                <option value="">ทุกเครื่องจักร</option>
+                                <option value="PR-03">PR-03</option>
+                                <option value="PR-04">PR-04</option>
+                                <option value="PR-06">PR-06</option>
+                                <option value="PR-14">PR-14</option>
+                                <option value="PR-16">PR-16</option>
+                                <option value="PR-18">PR-18</option>
+                                <option value="PR-19">PR-19</option>
+                                <option value="เครื่องผ่า">เครื่องผ่า</option>
+                                <option value="เครื่องลามิเนต">เครื่องลามิเนต</option>
+                                <option value="เครื่องซีล">เครื่องซีล</option>
+                                <option value="เครื่องกรอ">เครื่องกรอ</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Phase -->
+                        <div>
+                            <select id="filter-phase" onchange="renderTable()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white outline-none">
+                                <option value="">ทุกช่วงที่พบปัญหา</option>
+                                <option value="ระหว่างพิมพ์">ระหว่างพิมพ์</option>
+                                <option value="หลังพิมพ์">หลังพิมพ์</option>
+                                <option value="ผ่า">ผ่า</option>
+                                <option value="ตรวจม้วน">ตรวจม้วน</option>
+                                <option value="ซีล">ซีล</option>
+                                <option value="กรอ">กรอ</option>
+                                <option value="ตัด">ตัด</option>
+                                <option value="คัดเลือก">คัดเลือก</option>
+                                <option value="QC สุ่ม">QC สุ่ม</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Category -->
+                        <div>
+                            <select id="filter-category" onchange="renderTable()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white outline-none">
+                                <option value="">ทุกกลุ่มปัญหา</option>
+                                <option value="Printing">Printing</option>
+                                <option value="Appearance">Appearance</option>
+                                <option value="Functionality">Functionality</option>
+                                <option value="Out_of_Spec">Out_of_Spec</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Responsive Data Table with Touch Support -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[1420px]">
+                        <thead>
+                            <tr class="bg-psp-green text-white text-xs font-bold border-b-2 border-psp-yellow">
+                                <th class="py-3 px-3 text-center w-12">#</th>
+                                <th class="py-3 px-3">วันที่</th>
+                                <th class="py-3 px-3">เครื่องจักร</th>
+                                <th class="py-3 px-3">Job Order</th>
+                                <th class="py-3 px-3">ชนิดฟิล์ม</th>
+                                <th class="py-3 px-3">lot ฟิล์ม</th>
+                                <th class="py-3 px-3">lot พิมพ์</th>
+                                <th class="py-3 px-3">ช่วงที่พบปัญหา</th>
+                                <th class="py-3 px-3">กลุ่มปัญหา</th>
+                                <th class="py-3 px-3">ปัญหาที่พบ</th>
+                                <th class="py-3 px-3 max-w-[200px]">รายละเอียดปัญหาเพิ่มเติม</th>
+                                <th class="py-3 px-3 text-right">ยอดพบปัญหา (kg)</th>
+                                <th class="py-3 px-3 text-center">รูปภาพ</th>
+                                <th class="py-3 px-3">วิธีการจัดการ</th>
+                                <th class="py-3 px-3 text-center sticky right-0 bg-psp-green">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-log-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm">
+                            <!-- Rows injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State with Cute PSP Mascot -->
+                <div id="empty-state" class="hidden py-10 text-center px-4">
+                    <div class="w-24 h-28 mx-auto mb-2 flex items-center justify-center">
+                        <img src="Gemini_Generated_Image_sn7q9gsn7q9gsn7q-Photoroom.png"
+                             onerror="this.style.display='none'"
+                             alt="PSP QC Mascot"
+                             class="h-28 w-auto object-contain mascot-float drop-shadow-xs">
+                    </div>
+                    <p class="text-sm font-bold text-psp-green">ไม่พบข้อมูลรายการที่ค้นหาค่ะ</p>
+                    <p class="text-xs text-slate-500 mt-1">ลองเปลี่ยนเงื่อนไขตัวกรอง หรือกรอกข้อมูลใหม่ในฟอร์มด้านบนได้เลยนะคะ</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 2: REAL-TIME DASHBOARD & PARETO ANALYSIS              -->
+        <!-- ========================================================= -->
+        <section id="view-dashboard" class="hidden space-y-6">
+            <!-- Dashboard Header Banner with Mascot -->
+            <div class="bg-gradient-to-r from-psp-green via-emerald-700 to-amber-500 rounded-3xl p-4 sm:p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <div class="hidden sm:flex shrink-0 bg-white/95 p-2 rounded-2xl border-2 border-psp-yellow shadow-sm">
+                        <img src="Gemini_Generated_Image_sn7q9gsn7q9gsn7q-Photoroom.png"
+                             onerror="this.style.display='none'"
+                             alt="PSP QC Mascot"
+                             class="h-20 sm:h-24 w-auto object-contain mascot-float">
+                    </div>
+                    <div>
+                        <span class="px-3 py-1 text-[10px] sm:text-xs font-bold rounded-full bg-psp-yellow text-slate-900">PSP Quality Intelligence</span>
+                        <h2 class="text-base sm:text-xl font-bold text-white mt-1.5 sm:mt-2">สรุปผลวิเคราะห์จุดเฝ้าระวังและ Pareto ของเสียแผนกพิมพ์</h2>
+                        <p class="text-xs sm:text-sm text-amber-50 mt-1">
+                            ชี้เป้ากลุ่มปัญหาหลัก (Top Defects), เปรียบเทียบประสิทธิภาพเครื่องจักร และสัดส่วนความสูญเสียช่วงต่างๆ
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-white/95 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border-2 border-psp-yellow shadow-xs shrink-0">
+                    <div class="text-[11px] sm:text-xs font-semibold text-slate-500">Top Critical Defect (จุดเฝ้าระวังอันดับ 1)</div>
+                    <div id="dash-top-defect" class="text-xs sm:text-base font-bold text-psp-orange mt-0.5">-</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+                <!-- Chart 1: Defect Category Pareto (Bar Chart) -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-800">ยอดที่พบปัญหา (kg) แยกตามกลุ่มปัญหา</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">จัดเรียงจากมากไปน้อยเพื่อชี้เป้าจุดที่ต้องแก้ไขเร่งด่วน</p>
+                        </div>
+                        <span class="p-2 rounded-xl bg-orange-100 text-psp-orange"><i class="ph ph-chart-bar-horizontal text-lg sm:text-xl"></i></span>
+                    </div>
+                    <div class="relative h-64 sm:h-72 w-full">
+                        <canvas id="chart-category"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Stage / Phase Distribution (Doughnut Chart) -->
+                <div class="lg:col-span-5 bg-white rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-800">สัดส่วนของเสียแยกตามช่วงที่พบปัญหา (kg)</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">วิเคราะห์จุดดักจับปัญหาตั้งแต่ระหว่างพิมพ์ถึงปลายทาง</p>
+                        </div>
+                        <span class="p-2 rounded-xl bg-amber-100 text-amber-700"><i class="ph ph-chart-pie-slice text-lg sm:text-xl"></i></span>
+                    </div>
+                    <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
+                        <canvas id="chart-phase"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Machine Comparison -->
+                <div class="lg:col-span-6 bg-white rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-800">เปรียบเทียบยอดที่พบปัญหา (kg) แยกตามเครื่องจักร</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">สรุปยอดน้ำหนักของเสียตามรายชื่อเครื่องจักร</p>
+                        </div>
+                        <span class="p-2 rounded-xl bg-emerald-100 text-psp-green"><i class="ph ph-factory text-lg sm:text-xl"></i></span>
+                    </div>
+                    <div class="relative h-60 sm:h-64 w-full">
+                        <canvas id="chart-machine"></canvas>
+                    </div>
+                </div>
+
+                <!-- Summary Table: Pareto Breakdown -->
+                <div class="lg:col-span-6 bg-white rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-xs flex flex-col">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-800">ตารางสรุปสัดส่วน Pareto รายกลุ่มปัญหา</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-500">แสดงจำนวนครั้ง น้ำหนัก (kg) และสัดส่วน %</p>
+                        </div>
+                        <span class="p-2 rounded-xl bg-yellow-100 text-amber-700"><i class="ph ph-list-numbers text-lg sm:text-xl"></i></span>
+                    </div>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-amber-50 text-slate-800 border-b border-amber-200">
+                                    <th class="py-2.5 px-3 font-bold">กลุ่มปัญหา (Defect Category)</th>
+                                    <th class="py-2.5 px-3 text-center font-bold">จำนวนครั้ง</th>
+                                    <th class="py-2.5 px-3 text-right font-bold">น้ำหนัก (kg)</th>
+                                    <th class="py-2.5 px-3 text-right font-bold">สัดส่วน %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pareto-summary-tbody" class="divide-y divide-slate-100">
+                                <!-- Filled dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t-2 border-psp-green py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 gap-2 text-center sm:text-left">
+            <div class="flex items-center justify-center sm:justify-start gap-2 font-semibold">
+                <span class="px-2 py-0.5 rounded bg-psp-green text-white font-bold">PSP</span>
+                <span>MASTER LOG: บันทึกการตรวจสอบคุณภาพสินค้าระหว่างกระบวนการผลิต</span>
+            </div>
+            <div>รองรับการใช้งานผ่านมือถือ แท็บเล็ต และคอมพิวเตอร์อย่างเต็มรูปแบบ</div>
+        </div>
+    </footer>
+
+    <!-- Lightbox Modal for Photo Preview -->
+    <div id="photo-modal" onclick="closePhotoModal()" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+            <div class="px-5 py-3 bg-psp-green text-white flex items-center justify-between">
+                <span id="modal-photo-title" class="text-sm font-bold">ภาพถ่ายปัญหาหน้างาน</span>
+                <button onclick="closePhotoModal()" class="p-1.5 rounded-xl hover:bg-white/20 text-white transition">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 bg-slate-100 flex items-center justify-center max-h-[75vh] overflow-auto">
+                <img id="modal-photo-img" src="" alt="Defect Full View" class="max-w-full max-h-[68vh] rounded-xl shadow-md object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal (Replaces window.confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-orange-100 text-psp-orange flex items-center justify-center shrink-0">
+                    <i class="ph ph-warning-circle text-2xl"></i>
+                </div>
+                <div>
+                    <h3 id="confirm-title" class="text-base font-bold text-slate-800">ยืนยันการดำเนินการ</h3>
+                    <p id="confirm-message" class="text-xs text-slate-500 mt-0.5">คุณต้องการดำเนินการนี้ใช่หรือไม่?</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50">ยกเลิก</button>
+                <button id="confirm-yes-btn" class="px-4 py-2 text-xs font-semibold rounded-xl bg-psp-orange text-white hover:bg-orange-700">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. STATE & CONSTANTS (MATCHING Test.xlsx COLUMNS A-L)
+        // =========================================================================
+        const STORAGE_KEY = 'gravure_qc_master_log_v1';
+
+        const DEFECT_CATEGORIES = [
+            "Printing",
+            "Appearance",
+            "Functionality",
+            "Out_of_Spec",
+            "อื่นๆ"
+        ];
+
+        const MACHINES = [
+            "PR-03",
+            "PR-04",
+            "PR-06",
+            "PR-14",
+            "PR-16",
+            "PR-18",
+            "PR-19",
+            "เครื่องผ่า",
+            "เครื่องลามิเนต",
+            "เครื่องซีล",
+            "เครื่องกรอ",
+            "อื่นๆ"
+        ];
+
+        const PHASES = [
+            "ระหว่างพิมพ์",
+            "หลังพิมพ์",
+            "ผ่า",
+            "ตรวจม้วน",
+            "ซีล",
+            "กรอ",
+            "ตัด",
+            "คัดเลือก",
+            "QC สุ่ม",
+            "อื่นๆ"
+        ];
+
+        const DEFECT_OPTIONS = {
+            "Printing": [
+                "เลอะสี", "สีเยิ้ม", "สีเกาะบล๊อก", "สีกระเด็น",
+                "จุดสีจากบล็อคเป็นตามด", "สีด่าง", "สีถอน", "สีหลุด",
+                "สกรีนตัน", "ลูกยางเบา", "สีไม่เหมือน STD", "เส้นสี",
+                "พิมพ์เหลื่อม", "รอยลูกยาง", "ฝุ่นเกาะลูกยาง", "Hotmelt", "อื่น"
+            ],
+            "Appearance": [
+                "กรอหลวม / กรอยับย่นในม้วน",
+                "รอยขูด / รอยขาด / รอยย่น",
+                "วัตถุดิบมีปัญหา / ฟิล์มเป็นเม็ด / ฟิล์มยับ",
+                "รอยปรุฉีกยาก / ปรุติดกัน / ปรุฉีกขาดง่าย / ปรุไม่ทะลุ / รอยปรุฉีกขาด",
+                "รอยประกบ กาวล้น / รอยกรอไม่มีกาว / ฟองอากาศ / รอยประกบเป็นครีบยื่น / รอยปะกาวมีเส้นสี / รอยประกบกาวมีปัญหา",
+                "ฟิล์มเปลี่ยนสี",
+                "แกนม้วนเบี้ยว",
+                "ม้วนโก่ง / ขอบไม่เรียบ",
+                "กาวยับ / กาวติดไม่แน่น / ไม่มีแถบกาว / แถบกาวเลื่อน",
+                "อื่นๆ"
+            ],
+            "Functionality": [
+                "ถุงเหนียว", "ซีลก้นถุงไม่ติด", "Side Seal ไม่แน่น",
+                "ตัดปิดปากถุง", "ฟิล์มคลี่ออกยาก",
+                "รอยซีลเป็นรู รอยซีลละลาย", "ตัดไม่ติด"
+            ],
+            "Out_of_Spec": [
+                "ขนาดไม่ตรงตาม Spec. / ความหนาผิด Spec.",
+                "รอยต่อเกิน Spec",
+                "รอยพับไม่ตรงตำแหน่ง/รอยประกบฟิล์มไม่ตรงตำแหน่ง",
+                "ฉากตัดผิด",
+                "ซีลขนาดไม่ตรง Spec.",
+                "กรอเข้าม้วนผิดด้าน",
+                "ตาไฟไม่ตรงตาม Spec.",
+                "รอยปรุผิดด้าน",
+                "อื่น"
+            ],
+            "อื่นๆ": ["อื่น"]
+        };
+
+        function updateDefectOptions(preserveValue = false) {
+            const categoryEl = document.getElementById('field-category');
+            const defectEl = document.getElementById('field-defect-found');
+            const otherEl = document.getElementById('field-defect-other');
+            if (!categoryEl || !defectEl) return;
+
+            const previousValue = preserveValue ? defectEl.value : '';
+            const options = DEFECT_OPTIONS[categoryEl.value] || [];
+            defectEl.innerHTML = '<option value="">-- เลือกปัญหาที่พบ --</option>';
+
+            options.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                defectEl.appendChild(option);
+            });
+
+            if (previousValue && options.includes(previousValue)) {
+                defectEl.value = previousValue;
+            }
+            if (otherEl) {
+                const isOther = defectEl.value === 'อื่น' || defectEl.value === 'อื่นๆ';
+                otherEl.classList.toggle('hidden', !isOther);
+                otherEl.required = isOther;
+            }
+        }
+
+        function toggleDefectOtherInput() {
+            const defectEl = document.getElementById('field-defect-found');
+            const otherEl = document.getElementById('field-defect-other');
+            if (!defectEl || !otherEl) return;
+            const isOther = defectEl.value === 'อื่น' || defectEl.value === 'อื่นๆ';
+            otherEl.classList.toggle('hidden', !isOther);
+            otherEl.required = isOther;
+            if (!isOther) otherEl.value = '';
+        }
+
+        document.getElementById('field-category')?.addEventListener('change', () => {
+            updateDefectOptions(false);
+        });
+        document.getElementById('field-defect-found')?.addEventListener('change', toggleDefectOtherInput);
+
+        const SAMPLE_DATA = [
+            {
+                id: 'REC-1001',
+                date: '2026-11-15',
+                machine: 'PR-03',
+                jobOrder: 'JO-2611-001',
+                filmType: 'PET 12µm',
+                filmLot: 'FL-2611-08A',
+                printLot: 'PL-PR03-101',
+                phase: 'ระหว่างพิมพ์',
+                category: 'Printing',
+                defectFound: 'พิมพ์เหลื่อม',
+                details: 'สีเหลืองและสีแดงเหลื่อม 0.3 mm ช่วงเร่งความเร็วเริ่มต้น',
+                qtyKg: 14.5,
+                photo: '',
+                disposition: 'นำไป Rework'
+            },
+            {
+                id: 'REC-1002',
+                date: '2026-11-15',
+                machine: 'PR-14',
+                jobOrder: 'JO-2611-004',
+                filmType: 'BOPP 20µm',
+                filmLot: 'FL-2611-12B',
+                printLot: 'PL-PR14-045',
+                phase: 'ระหว่างพิมพ์',
+                category: 'Printing',
+                defectFound: 'เส้นสี',
+                details: 'เกิดเส้นใบปาดบนสีฟ้า Cyan ยาวต่อเนื่อง 400 เมตร',
+                qtyKg: 38.0,
+                photo: '',
+                disposition: 'นำไป Rework'
+            },
+            {
+                id: 'REC-1003',
+                date: '2026-11-14',
+                machine: 'PR-18',
+                jobOrder: 'JO-2611-009',
+                filmType: 'NY 15µm',
+                filmLot: 'FL-2610-99C',
+                printLot: 'PL-PR18-019',
+                phase: 'QC สุ่ม',
+                category: 'Appearance',
+                defectFound: 'สีไม่เหมือน STD',
+                details: 'ค่าความหนืดหมึกขาวลดลงทำให้เฉดสีพื้นจางกว่า Master Standard (Delta E > 2.5)',
+                qtyKg: 22.4,
+                photo: '',
+                disposition: 'ส่งม้วนให้ QC'
+            },
+            {
+                id: 'REC-1004',
+                date: '2026-11-14',
+                machine: 'เครื่องลามิเนต',
+                jobOrder: 'JO-2611-012',
+                filmType: 'PE 45µm',
+                filmLot: 'FL-2611-03D',
+                printLot: 'PL-LM-102',
+                phase: 'หลังพิมพ์',
+                category: 'Out_of_Spec',
+                defectFound: 'รอยขูด / รอยขาด / รอยย่น',
+                details: 'ฟิล์มย่นและขนาดความกว้างม้วนเกินเกณฑ์มาตรฐานช่วงเข้าเตาอบ Drying Tunnel',
+                qtyKg: 45.2,
+                photo: '',
+                disposition: 'ลงของเสียในระบบ'
+            },
+            {
+                id: 'REC-1005',
+                date: '2026-11-13',
+                machine: 'PR-06',
+                jobOrder: 'JO-2611-015',
+                filmType: 'PET 12µm',
+                filmLot: 'FL-2611-15E',
+                printLot: 'PL-PR06-046',
+                phase: 'ตรวจม้วน',
+                category: 'Functionality',
+                defectFound: 'ถุงเหนียว',
+                details: 'ตรวจพบ Barcode สแกนไม่ติดบางช่วงเนื่องจากหมึกบวมเล็กน้อย',
+                qtyKg: 8.5,
+                photo: '',
+                disposition: 'รับเฉพาะ lot'
+            },
+            {
+                id: 'REC-1006',
+                date: '2026-11-13',
+                machine: 'เครื่องผ่า',
+                jobOrder: 'JO-2611-018',
+                filmType: 'CPP 30µm',
+                filmLot: 'FL-2611-21F',
+                printLot: 'PL-SL-020',
+                phase: 'ผ่า',
+                category: 'Appearance',
+                defectFound: 'กรอหลวม / กรอยับย่นในม้วน',
+                details: 'พบจุดหมึกอุดตันบริเวณตัวอักษรขนาดเล็กขณะกรอผ่าม้วน',
+                qtyKg: 19.0,
+                photo: '',
+                disposition: 'นำไป Rework'
+            }
+        ];
+
+        let qcRecords = [];
+        let currentPhotoBase64 = '';
+        let chartInstances = {};
+        updateDefectOptions();
+
+        function updateDefectOptions(preserveValue = false) {
+            const categoryEl = document.getElementById('field-category');
+            const defectEl = document.getElementById('field-defect-found');
+            const otherEl = document.getElementById('field-defect-other');
+            if (!categoryEl || !defectEl) return;
+
+            const previousValue = preserveValue ? defectEl.value : '';
+            const options = DEFECT_OPTIONS[categoryEl.value] || [];
+            defectEl.innerHTML = '<option value="">-- เลือกปัญหาที่พบ --</option>';
+
+            options.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                defectEl.appendChild(option);
+            });
+
+            if (previousValue && options.includes(previousValue)) {
+                defectEl.value = previousValue;
+            }
+            if (otherEl) {
+                const isOther = defectEl.value === 'อื่น' || defectEl.value === 'อื่นๆ';
+                otherEl.classList.toggle('hidden', !isOther);
+                otherEl.required = isOther;
+            }
+        }
+
+        function toggleDefectOtherInput() {
+            const defectEl = document.getElementById('field-defect-found');
+            const otherEl = document.getElementById('field-defect-other');
+            if (!defectEl || !otherEl) return;
+            const isOther = defectEl.value === 'อื่น' || defectEl.value === 'อื่นๆ';
+            otherEl.classList.toggle('hidden', !isOther);
+            otherEl.required = isOther;
+            if (!isOther) otherEl.value = '';
+        }
+
+        document.getElementById('field-category')?.addEventListener('change', () => {
+            updateDefectOptions(false);
+        });
+        document.getElementById('field-defect-found')?.addEventListener('change', toggleDefectOtherInput);
+
+        function initStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    qcRecords = JSON.parse(saved);
+                } catch (e) {
+                    qcRecords = [...SAMPLE_DATA];
+                }
+            } else {
+                qcRecords = [...SAMPLE_DATA];
+                saveRecords();
+            }
+        }
+
+        function saveRecords() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(qcRecords));
+        }
+
+        function renderAll() {
+            renderTable();
+            updateKPIs();
+        }
+
+        function updateKPIs() {
+            const records = getFilteredRecords();
+            const totalCount = qcRecords.length;
+            const totalKg = qcRecords.reduce((sum, r) => sum + (Number(r.qtyKg) || 0), 0);
+            const reworkKg = qcRecords.filter(r => r.disposition === 'นำไป Rework').reduce((sum, r) => sum + (Number(r.qtyKg) || 0), 0);
+            const scrapKg = qcRecords.filter(r => r.disposition === 'ลงของเสียในระบบ').reduce((sum, r) => sum + (Number(r.qtyKg) || 0), 0);
+            const printingKg = qcRecords.filter(r => r.phase === 'ระหว่างพิมพ์').reduce((sum, r) => sum + (Number(r.qtyKg) || 0), 0);
+            const downstreamKg = totalKg - printingKg;
+
+            document.getElementById('kpi-count').textContent = totalCount;
+            document.getElementById('badge-total-count').textContent = totalCount;
+            document.getElementById('kpi-total-kg').textContent = totalKg.toFixed(2);
+            document.getElementById('kpi-rework-kg').textContent = reworkKg.toFixed(2);
+            document.getElementById('kpi-scrap-kg').textContent = scrapKg.toFixed(2);
+            document.getElementById('kpi-printing-kg').textContent = printingKg.toFixed(2);
+            document.getElementById('kpi-downstream-kg').textContent = downstreamKg.toFixed(2);
+        }
+
+        function getFilteredRecords() {
+            const search = document.getElementById('filter-search').value.toLowerCase().trim();
+            const dateFilter = document.getElementById('filter-date').value;
+            const machineFilter = document.getElementById('filter-machine').value;
+            const phaseFilter = document.getElementById('filter-phase').value;
+            const catFilter = document.getElementById('filter-category').value;
+
+            return qcRecords.filter(r => {
+                const matchSearch = !search || 
+                    (r.jobOrder && r.jobOrder.toLowerCase().includes(search)) ||
+                    (r.filmLot && r.filmLot.toLowerCase().includes(search)) ||
+                    (r.printLot && r.printLot.toLowerCase().includes(search)) ||
+                    (r.defectFound && r.defectFound.toLowerCase().includes(search)) ||
+                    (r.details && r.details.toLowerCase().includes(search)) ||
+                    (r.machine && r.machine.toLowerCase().includes(search));
+
+                const matchDate = !dateFilter || r.date === dateFilter;
+                const matchMachine = !machineFilter || r.machine === machineFilter;
+                const matchPhase = !phaseFilter || r.phase === phaseFilter;
+                const matchCat = !catFilter || r.category === catFilter;
+
+                return matchSearch && matchDate && matchMachine && matchPhase && matchCat;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('master-log-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const filtered = getFilteredRecords();
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = filtered.map((r, idx) => {
+                const defectDisplay = r.defectFound ? `<span class="font-semibold text-slate-800">${escapeHtml(r.defectFound)}</span>` : '<span class="text-slate-400">-</span>';
+                const photoBadge = r.photo 
+                    ? `<button onclick="openPhotoModal('${r.id}')" class="px-2 py-1 bg-emerald-100 text-psp-green rounded-lg font-semibold hover:bg-emerald-200 transition flex items-center gap-1 mx-auto"><i class="ph ph-image text-sm"></i> ดูรูป</button>`
+                    : `<span class="text-slate-400 text-[11px]">ไม่มีรูป</span>`;
+
+                return `
+                    <tr class="hover:bg-amber-50/40 transition">
+                        <td class="py-3 px-3 text-center text-slate-500 font-medium">${idx + 1}</td>
+                        <td class="py-3 px-3 font-medium whitespace-nowrap">${escapeHtml(r.date)}</td>
+                        <td class="py-3 px-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-emerald-100 text-psp-green font-semibold text-[11px]">${escapeHtml(r.machine)}</span></td>
+                        <td class="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">${escapeHtml(r.jobOrder)}</td>
+                        <td class="py-3 px-3 whitespace-nowrap text-slate-700">${escapeHtml(r.filmType)}</td>
+                        <td class="py-3 px-3 text-slate-600 whitespace-nowrap">${escapeHtml(r.filmLot)}</td>
+                        <td class="py-3 px-3 text-slate-600 whitespace-nowrap">${escapeHtml(r.printLot)}</td>
+                        <td class="py-3 px-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-semibold text-[11px]">${escapeHtml(r.phase)}</span></td>
+                        <td class="py-3 px-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-orange-100 text-psp-orange font-semibold text-[11px]">${escapeHtml(r.category)}</span></td>
+                        <td class="py-3 px-3">${defectDisplay}</td>
+                        <td class="py-3 px-3 text-slate-600 max-w-[200px] truncate" title="${escapeHtml(r.details)}">${escapeHtml(r.details || '-')}</td>
+                        <td class="py-3 px-3 text-right font-bold text-psp-orange whitespace-nowrap">${Number(r.qtyKg).toFixed(2)}</td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">${photoBadge}</td>
+                        <td class="py-3 px-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">${escapeHtml(r.disposition)}</span></td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap sticky right-0 bg-white/95 shadow-xs">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="editRecord('${r.id}')" title="แก้ไข" class="p-1.5 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 transition"><i class="ph ph-pencil-simple text-sm font-bold"></i></button>
+                                <button onclick="deleteRecord('${r.id}')" title="ลบ" class="p-1.5 rounded-lg bg-red-100 text-psp-red hover:bg-red-200 transition"><i class="ph ph-trash text-sm font-bold"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                    document.getElementById('photo-preview-img').src = currentPhotoBase64;
+                    document.getElementById('photo-preview-box').classList.remove('hidden');
+                    document.getElementById('photo-label-text').textContent = 'เปลี่ยนรูป';
+                    showToast('แนบรูปถ่ายสำเร็จ', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPhoto() {
+            currentPhotoBase64 = '';
+            document.getElementById('field-photo').value = '';
+            document.getElementById('photo-preview-box').classList.add('hidden');
+            document.getElementById('photo-label-text').textContent = 'แนบรูป / ถ่ายภาพ';
+        }
+
+        function toggleCustomMachineInput() {
+            const sel = document.getElementById('field-machine');
+            const other = document.getElementById('field-machine-other');
+            const isOther = sel.value === 'อื่นๆ';
+            other.classList.toggle('hidden', !isOther);
+            other.required = isOther;
+            if (!isOther) other.value = '';
+        }
+
+        function toggleCustomPhaseInput() {
+            const sel = document.getElementById('field-phase');
+            const other = document.getElementById('field-phase-other');
+            const isOther = sel.value === 'อื่นๆ';
+            other.classList.toggle('hidden', !isOther);
+            other.required = isOther;
+            if (!isOther) other.value = '';
+        }
+
+        function toggleCustomCategoryInput() {
+            const sel = document.getElementById('field-category');
+            const other = document.getElementById('field-category-other');
+            const isOther = sel.value === 'อื่นๆ';
+            other.classList.toggle('hidden', !isOther);
+            other.required = isOther;
+            if (!isOther) other.value = '';
+        }
+
+        document.getElementById('qc-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('edit-id').value;
+            const machineVal = document.getElementById('field-machine').value === 'อื่นๆ' 
+                ? document.getElementById('field-machine-other').value.trim() || 'อื่นๆ' 
+                : document.getElementById('field-machine').value;
+
+            const phaseVal = document.getElementById('field-phase').value === 'อื่นๆ' 
+                ? document.getElementById('field-phase-other').value.trim() || 'อื่นๆ' 
+                : document.getElementById('field-phase').value;
+
+            const categoryVal = document.getElementById('field-category').value === 'อื่นๆ' 
+                ? document.getElementById('field-category-other').value.trim() || 'อื่นๆ' 
+                : document.getElementById('field-category').value;
+
+            let defectVal = document.getElementById('field-defect-found').value;
+            if (defectVal === 'อื่น' || defectVal === 'อื่นๆ') {
+                defectVal = document.getElementById('field-defect-other').value.trim() || defectVal;
+            }
+
+            const recordData = {
+                id: editId || 'REC-' + Date.now(),
+                date: document.getElementById('field-date').value,
+                machine: machineVal,
+                jobOrder: document.getElementById('field-job').value.toUpperCase().trim(),
+                filmType: document.getElementById('field-film-type').value.trim(),
+                filmLot: document.getElementById('field-film-lot').value.trim(),
+                printLot: document.getElementById('field-print-lot').value.trim(),
+                phase: phaseVal,
+                category: categoryVal,
+                defectFound: defectVal,
+                details: document.getElementById('field-details').value.trim(),
+                qtyKg: parseFloat(document.getElementById('field-qty').value) || 0,
+                photo: currentPhotoBase64,
+                disposition: document.getElementById('field-disposition').value
+            };
+
+            if (editId) {
+                const idx = qcRecords.findIndex(r => r.id === editId);
+                if (idx !== -1) {
+                    if (!recordData.photo) {
+                        recordData.photo = qcRecords[idx].photo;
+                    }
+                    qcRecords[idx] = recordData;
+                }
+                showToast('อัปเดตข้อมูลสำเร็จ!', 'success');
+            } else {
+                qcRecords.unshift(recordData);
+                showToast('บันทึกข้อมูลใหม่สำเร็จ!', 'success');
+            }
+
+            saveRecords();
+            renderAll();
+            resetForm();
+        });
+
+        function editRecord(id) {
+            const rec = qcRecords.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('edit-id').value = rec.id;
+            document.getElementById('field-date').value = rec.date;
+            
+            const machineSelect = document.getElementById('field-machine');
+            if ([...machineSelect.options].some(o => o.value === rec.machine)) {
+                machineSelect.value = rec.machine;
+                document.getElementById('field-machine-other').classList.add('hidden');
+            } else {
+                machineSelect.value = 'อื่นๆ';
+                document.getElementById('field-machine-other').value = rec.machine;
+                document.getElementById('field-machine-other').classList.remove('hidden');
+            }
+
+            document.getElementById('field-job').value = rec.jobOrder;
+            document.getElementById('field-film-type').value = rec.filmType;
+            document.getElementById('field-film-lot').value = rec.filmLot;
+            document.getElementById('field-print-lot').value = rec.printLot;
+
+            const phaseSelect = document.getElementById('field-phase');
+            if ([...phaseSelect.options].some(o => o.value === rec.phase)) {
+                phaseSelect.value = rec.phase;
+                document.getElementById('field-phase-other').classList.add('hidden');
+            } else {
+                phaseSelect.value = 'อื่นๆ';
+                document.getElementById('field-phase-other').value = rec.phase;
+                document.getElementById('field-phase-other').classList.remove('hidden');
+            }
+
+            const catSelect = document.getElementById('field-category');
+            if ([...catSelect.options].some(o => o.value === rec.category)) {
+                catSelect.value = rec.category;
+                document.getElementById('field-category-other').classList.add('hidden');
+            } else {
+                catSelect.value = 'อื่นๆ';
+                document.getElementById('field-category-other').value = rec.category;
+                document.getElementById('field-category-other').classList.remove('hidden');
+            }
+
+            updateDefectOptions(true);
+            const defectSelect = document.getElementById('field-defect-found');
+            const defectOther = document.getElementById('field-defect-other');
+            if ([...defectSelect.options].some(o => o.value === rec.defectFound)) {
+                defectSelect.value = rec.defectFound;
+                defectOther.classList.add('hidden');
+            } else {
+                defectSelect.value = 'อื่น';
+                defectOther.value = rec.defectFound;
+                defectOther.classList.remove('hidden');
+            }
+
+            document.getElementById('field-details').value = rec.details;
+            document.getElementById('field-qty').value = rec.qtyKg;
+            document.getElementById('field-disposition').value = rec.disposition;
+
+            currentPhotoBase64 = rec.photo || '';
+            if (currentPhotoBase64) {
+                document.getElementById('photo-preview-img').src = currentPhotoBase64;
+                document.getElementById('photo-preview-box').classList.remove('hidden');
+                document.getElementById('photo-label-text').textContent = 'เปลี่ยนรูป';
+            } else {
+                clearPhoto();
+            }
+
+            document.getElementById('form-title').textContent = 'แก้ไขข้อมูลการตรวจสอบ';
+            document.getElementById('submit-btn-text').textContent = 'บันทึกการแก้ไข';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteRecord(id) {
+            openConfirmModal('ยืนยันการลบรายการ', 'คุณต้องการลบรายการข้อมูลตรวจสอบนี้ออกจากระบบใช่หรือไม่?', () => {
+                qcRecords = qcRecords.filter(r => r.id !== id);
+                saveRecords();
+                renderAll();
+                showToast('ลบรายการสำเร็จ', 'info');
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('qc-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('field-machine-other').classList.add('hidden');
+            document.getElementById('field-phase-other').classList.add('hidden');
+            document.getElementById('field-category-other').classList.add('hidden');
+            document.getElementById('field-defect-other').classList.add('hidden');
+            clearPhoto();
+            updateDefectOptions();
+            document.getElementById('form-title').textContent = 'บันทึกข้อมูลตรวจสอบคุณภาพใหม่ (New QC Record)';
+            document.getElementById('submit-btn-text').textContent = 'บันทึกข้อมูล';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-date').value = '';
+            document.getElementById('filter-machine').value = '';
+            document.getElementById('filter-phase').value = '';
+            document.getElementById('filter-category').value = '';
+            renderTable();
+            showToast('ล้างตัวกรองทั้งหมดแล้ว', 'info');
+        }
+
+        function confirmClearAllData() {
+            openConfirmModal('รีเซ็ตข้อมูลตัวอย่าง', 'การดำเนินการนี้จะรีเซ็ตข้อมูลทั้งหมดกลับเป็นชุดตัวอย่างเริ่มต้น คุณต้องการดำเนินการต่อหรือไม่?', () => {
+                qcRecords = [...SAMPLE_DATA];
+                saveRecords();
+                renderAll();
+                showToast('รีเซ็ตข้อมูลตัวอย่างสำเร็จ', 'success');
+            });
+        }
+
+        function switchTab(tabName) {
+            const logView = document.getElementById('view-log');
+            const dashView = document.getElementById('view-dashboard');
+            const logBtn = document.getElementById('tab-btn-log');
+            const dashBtn = document.getElementById('tab-btn-dashboard');
+
+            if (tabName === 'log') {
+                logView.classList.remove('hidden');
+                dashView.classList.add('hidden');
+                logBtn.className = "px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-psp-green text-white transition shadow-xs flex items-center gap-1.5 whitespace-nowrap";
+                dashBtn.className = "px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 whitespace-nowrap";
+            } else {
+                logView.classList.add('hidden');
+                dashView.classList.remove('hidden');
+                dashBtn.className = "px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-psp-green text-white transition shadow-xs flex items-center gap-1.5 whitespace-nowrap";
+                logBtn.className = "px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 whitespace-nowrap";
+                renderDashboard();
+            }
+        }
+
+        function renderDashboard() {
+            const records = getFilteredRecords();
+
+            const defectMap = {};
+            records.forEach(r => {
+                const key = r.defectFound || r.category || 'อื่นๆ';
+                defectMap[key] = (defectMap[key] || 0) + (Number(r.qtyKg) || 0);
+            });
+
+            const sortedDefects = Object.entries(defectMap).sort((a, b) => b[1] - a[1]);
+            const topDefectEl = document.getElementById('dash-top-defect');
+            if (sortedDefects.length > 0) {
+                topDefectEl.textContent = `${sortedDefects[0][0]} (${sortedDefects[0][1].toFixed(2)} kg)`;
+            } else {
+                topDefectEl.textContent = 'ยังไม่มีข้อมูลบันทึก';
+            }
+
+            const totalRecordsKg = records.reduce((sum, r) => sum + (Number(r.qtyKg) || 0), 0);
+            const catMap = {};
+            records.forEach(r => {
+                const cat = r.category || 'อื่นๆ';
+                if (!catMap[cat]) catMap[cat] = { count: 0, kg: 0 };
+                catMap[cat].count += 1;
+                catMap[cat].kg += Number(r.qtyKg) || 0;
+            });
+
+            const sortedCategories = Object.entries(catMap).sort((a, b) => b[1].kg - a[1].kg);
+            const paretoTbody = document.getElementById('pareto-summary-tbody');
+            if (sortedCategories.length === 0) {
+                paretoTbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">ยังไม่มีข้อมูลในระบบ</td></tr>`;
+            } else {
+                paretoTbody.innerHTML = sortedCategories.map(([cat, data]) => {
+                    const pct = totalRecordsKg > 0 ? (data.kg / totalRecordsKg) * 100 : 0;
+                    return `
+                        <tr class="hover:bg-amber-50/50">
+                            <td class="py-2.5 px-3 font-semibold text-slate-800">${escapeHtml(cat)}</td>
+                            <td class="py-2.5 px-3 text-center">${data.count}</td>
+                            <td class="py-2.5 px-3 text-right font-bold text-psp-orange">${data.kg.toFixed(2)}</td>
+                            <td class="py-2.5 px-3 text-right font-semibold">${pct.toFixed(1)}%</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            renderCategoryChart(sortedCategories);
+            renderPhaseChart(records);
+            renderMachineChart(records);
+        }
+
+        function renderCategoryChart(sortedCategories) {
+            const ctx = document.getElementById('chart-category').getContext('2d');
+            if (chartInstances.category) chartInstances.category.destroy();
+
+            const labels = sortedCategories.map(item => item[0]);
+            const dataVals = sortedCategories.map(item => item[1].kg);
+
+            chartInstances.category = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'น้ำหนักของเสีย (kg)',
+                        data: dataVals,
+                        backgroundColor: ['#007A3D', '#E08214', '#EAB308', '#D32027', '#0A226B'],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderPhaseChart(records) {
+            const ctx = document.getElementById('chart-phase').getContext('2d');
+            if (chartInstances.phase) chartInstances.phase.destroy();
+
+            const phaseMap = {};
+            records.forEach(r => {
+                const ph = r.phase || 'อื่นๆ';
+                phaseMap[ph] = (phaseMap[ph] || 0) + (Number(r.qtyKg) || 0);
+            });
+
+            chartInstances.phase = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(phaseMap),
+                    datasets: [{
+                        data: Object.values(phaseMap),
+                        backgroundColor: ['#007A3D', '#E08214', '#EAB308', '#D32027', '#0A226B', '#10B981', '#F59E0B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Noto Sans Thai', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderMachineChart(records) {
+            const ctx = document.getElementById('chart-machine').getContext('2d');
+            if (chartInstances.machine) chartInstances.machine.destroy();
+
+            const machineMap = {};
+            records.forEach(r => {
+                const mac = r.machine || 'อื่นๆ';
+                machineMap[mac] = (machineMap[mac] || 0) + (Number(r.qtyKg) || 0);
+            });
+
+            chartInstances.machine = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(machineMap),
+                    datasets: [{
+                        label: 'น้ำหนัก (kg)',
+                        data: Object.values(machineMap),
+                        backgroundColor: '#E08214',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function buildExportRows() {
+            return qcRecords.map(r => ({
+                'วันที่': r.date,
+                'เครื่องจักร': r.machine,
+                'Job Order': r.jobOrder,
+                'ชนิดฟิล์ม': r.filmType,
+                'lot ฟิล์ม': r.filmLot,
+                'lot พิมพ์': r.printLot,
+                'ช่วงที่พบปัญหา': r.phase,
+                'กลุ่มปัญหา': r.category,
+                'ปัญหาที่พบ': r.defectFound || '',
+                'รายละเอียดปัญหาเพิ่มเติม': r.details,
+                'ยอดที่พบปัญหา (kg)': Number(r.qtyKg) || 0,
+                'รูปภาพปัญหา': r.photo ? 'มีรูปภาพแนบในระบบ' : 'ไม่มีรูปภาพ',
+                'วิธีการจัดการกับม้วนที่พบปัญหา': r.disposition
+            }));
+        }
+
+        function exportToExcel() {
+            if (qcRecords.length === 0) {
+                showToast('ไม่มีข้อมูลสำหรับส่งออก', 'error');
+                return;
+            }
+            const rows = buildExportRows();
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+
+            worksheet['!cols'] = [
+                { wch: 13 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                { wch: 15 }, { wch: 22 }, { wch: 20 }, { wch: 30 }, { wch: 38 },
+                { wch: 18 }, { wch: 20 }, { wch: 28 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Master_Log_QC');
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Gravure_QC_Master_Log_${todayStr}.xlsx`);
+            showToast('ส่งออกไฟล์ Excel (.xlsx) สำเร็จ!', 'success');
+        }
+
+        function exportToCSV() {
+            if (qcRecords.length === 0) {
+                showToast('ไม่มีข้อมูลสำหรับส่งออก', 'error');
+                return;
+            }
+            const rows = buildExportRows();
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+
+            const blob = new Blob(['\uFEFF' + csvOutput], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const todayStr = new Date().toISOString().split('T')[0];
+            link.href = url;
+            link.setAttribute('download', `Gravure_QC_Master_Log_${todayStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('ส่งออกไฟล์ CSV สำเร็จ!', 'success');
+        }
+
+        function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+                    if (jsonData.length === 0) {
+                        showToast('ไม่พบข้อมูลในไฟล์ Excel ที่เลือก', 'error');
+                        return;
+                    }
+
+                    const importedRecords = jsonData
+                        .filter(row => row['Job Order'] || row['เครื่องจักร'] || row['กลุ่มปัญหา'] || row['ปัญหาที่พบ'])
+                        .map((row, i) => ({
+                            id: 'IMP-' + Date.now() + '-' + i,
+                            date: formatExcelDate(row['วันที่']) || new Date().toISOString().split('T')[0],
+                            machine: String(row['เครื่องจักร'] || 'PR-03'),
+                            jobOrder: String(row['Job Order'] || `JO-IMP-${i + 1}`),
+                            filmType: String(row['ชนิดฟิล์ม'] || '-'),
+                            filmLot: String(row['lot ฟิล์ม'] || '-'),
+                            printLot: String(row['lot พิมพ์'] || '-'),
+                            phase: String(row['ช่วงที่พบปัญหา'] || 'ระหว่างพิมพ์'),
+                            category: String(row['กลุ่มปัญหา'] || 'Printing'),
+                            defectFound: String(row['ปัญหาที่พบ'] || ''),
+                            details: String(row['รายละเอียดปัญหาเพิ่มเติม'] || ''),
+                            qtyKg: parseFloat(row['ยอดที่พบปัญหา (kg)']) || 0,
+                            photo: '',
+                            disposition: String(row['วิธีการจัดการกับม้วนที่พบปัญหา'] || 'นำไป Rework')
+                        }));
+
+                    if (importedRecords.length === 0) {
+                        showToast('รูปแบบคอลัมน์ในไฟล์ไม่ตรงกับโครงสร้าง Master Log', 'error');
+                        return;
+                    }
+
+                    qcRecords = [...importedRecords, ...qcRecords];
+                    saveRecords();
+                    renderAll();
+                    showToast(`นำเข้าข้อมูลสำเร็จ ${importedRecords.length} รายการ`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function formatExcelDate(val) {
+            if (!val) return '';
+            if (typeof val === 'number') {
+                const utcDays = Math.floor(val - 25569);
+                const dateObj = new Date(utcDays * 86400 * 1000);
+                return dateObj.toISOString().split('T')[0];
+            }
+            return String(val).trim();
+        }
+
+        function openPhotoModal(id) {
+            const rec = qcRecords.find(r => r.id === id);
+            if (!rec || !rec.photo) return;
+            const defectTitle = rec.defectFound ? `${rec.category} - ${rec.defectFound}` : rec.category;
+            document.getElementById('modal-photo-title').textContent = `${rec.jobOrder} | ${defectTitle} (${rec.qtyKg} kg)`;
+            document.getElementById('modal-photo-img').src = rec.photo;
+            document.getElementById('photo-modal').classList.remove('hidden');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photo-modal').classList.add('hidden');
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const yesBtn = document.getElementById('confirm-yes-btn');
+            yesBtn.onclick = () => {
+                closeConfirmModal();
+                onConfirm();
+            };
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const styles = {
+                success: 'bg-psp-green text-white',
+                error: 'bg-psp-orange text-white',
+                info: 'bg-slate-800 text-white'
+            };
+
+            const icons = {
+                success: 'ph-check-circle',
+                error: 'ph-warning-circle',
+                info: 'ph-info'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg text-xs sm:text-sm font-medium transform transition-all duration-300 translate-y-0 ${styles[type] || styles.info}`;
+            toast.innerHTML = `<i class="ph ${icons[type] || icons.info} text-lg text-psp-yellow"></i><span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.onload = function() {
+            document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+            initStorage();
+            renderAll();
+            document.getElementById('import-excel-input').addEventListener('change', handleExcelImport);
+        };
+    </script>
+</body>
+</html>
